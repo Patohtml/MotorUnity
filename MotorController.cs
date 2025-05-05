@@ -1,24 +1,26 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class MotorController : MonoBehaviour
+public class MotorController : Simulator
 {
-    [Header("Configuración Motor")]
+    [Header("Información del Motor")]
     public bool motorEncendido = false;
     public float rpm = 0f;
-    public float minRPM = 800f;
-    public float maxRPM = 7000f;
-    public float rpmIncreaseRate = 2000f;
-    public float rpmDecreaseRate = 1500f;
-
-    [Header("Configuración Transmisión")]
-    public float velocidadActual = 0f;
-    public float relacionDiferencial = 3.42f;
-    public float radioRueda = 0.33f; // En metros
-    public float rpmMinimaCambioArriba = 2500f;
-    public float rpmMaximaCambioAbajo = 1000f;
     public int marchaActual = 0;
-    public float[] relacionesMarcha = { 0f, 3.82f, 2.20f, 1.52f, 1.22f, 1.02f, 0.84f }; // Neutral y 6 marchas
+    public float velocidadActual = 0f;
+    [SerializeField] private Creadores creador = Creadores.Fratti_Lucas;
+    
+    // Variables ocultas del inspector
+    private float minRPM = 800f;
+    private float maxRPM = 7000f;
+    private float rpmIncreaseRate = 2000f;
+    private float rpmDecreaseRate = 1500f;
+    private float rpmDecreaseRateMotorApagado = 800f;
+    private float relacionDiferencial = 3.42f;
+    private float radioRueda = 0.33f;
+    private float rpmMinimaCambioArriba = 2500f;
+    private float rpmMaximaCambioAbajo = 1000f;
+    private float[] relacionesMarcha = { 0f, 3.82f, 2.20f, 1.52f, 1.22f, 1.02f, 0.84f };
 
     private Keyboard teclado;
 
@@ -61,8 +63,9 @@ public class MotorController : MonoBehaviour
         }
         else
         {
-            rpm = 0f;
-            velocidadActual = 0f;
+            // Si el motor está apagado, las RPM disminuyen gradualmente
+            rpm -= rpmDecreaseRateMotorApagado * Time.deltaTime;
+            rpm = Mathf.Max(0f, rpm); // No permitir RPM negativas
         }
 
         // Encender/apagar motor
@@ -149,7 +152,7 @@ public class MotorController : MonoBehaviour
 
     private void CalcularVelocidad()
     {
-        if (marchaActual > 0 && motorEncendido)
+        if (marchaActual > 0 && rpm > 0)
         {
             // Fórmula: v = (rpm * pi * diámetro de rueda) / (60 * relación de marcha * relación diferencial)
             velocidadActual = (rpm * Mathf.PI * (2 * radioRueda)) / 
@@ -169,4 +172,20 @@ public class MotorController : MonoBehaviour
             Debug.Log("Velocidad: " + velocidadActual.ToString("F1") + " km/h");
         }
     }
-}
+
+    public void Start()
+    {
+        AsignarCreador(Creadores.Fratti_Lucas); 
+    }
+
+    public override void Describir()
+    {
+        Debug.Log("MotorController es un controlador de motor de un automóvil.");
+    }
+
+    public override void AsignarCreador(Creadores creador)
+    {
+        Debug.Log("Este componente fue creado por: " + creador.ToString());
+    }
+}   
+
